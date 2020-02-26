@@ -11,6 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.2",
+    "express": "^3.17.1",
+    "find": "^0.3.0",
+    "isomorphic-git": "^1.0.0",
     "npm-check-updates": "^4.0.1"
   }
 }
