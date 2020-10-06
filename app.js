@@ -1,46 +1,52 @@
+require('dotenv').config();
 const axios = require('axios');
-var execSync = require('child_process').execSync;
-var token = 'd709323d38dd41e64561276b7842e7f056067e07';
+const fs = require('fs');
+const execSync = require('child_process').execSync;
 
-
-axios.get('https://api.github.com/users/VikasSuresh/repos',{
-    headers: {
-        authorization: `token ${token}` 
-      }
-}).then(({data})=>{
-    var dir=data[3].name
-    try{
-        try{
-            execSync(`mkdir ${dir}`)
-            execSync(`git clone ${data[3].ssh_url}`)
-        }catch(err){
-            execSync('git pull',{cwd:`${dir}`})
-        }finally{
-            try{
-                var y=execSync(`find ${dir} -name package.json`).toString().split('\n')
-                if (y.length===1 && y[0]===''){
-                    console.log('Package.Json not Found')
-                }else{
-                    y.splice(y.indexOf(''),1);
-                    y.forEach(element => {
-                        execSync('ncu -u',{cwd:`./${element.slice(0,element.indexOf('package.json'))}`})
-                    })
-                    if(!execSync('git status',{cwd:`./${dir}`}).toString().includes('nothing to commit, working tree clean')){
-                        execSync('git add -A',{cwd:`./${dir}`})
-                        execSync('git commit -m "commited using bash"',{cwd:`./${dir}`})
-                        execSync('git push',{cwd:`./${dir}`})
-                    }else{
-                        console.log('no files updated')
-                    }
-                };
-            }catch(e){
-                console.log(e.output[2].toString())
-                process.exit();
+const gitRead = async ()=>{
+   try {
+    const { data } = await axios.get('https://api.github.com/users/VikasSuresh/repos',{
+        headers: {
+            authorization: `token ${process.env.token}` 
+          }
+    })
+    let gitFiles = data.map(d=>({
+        name:d.name,
+        ssh_url:d.ssh_url
+    }));
+    await Promise.all(gitFiles.map(async(f)=>{
+        try {
+            if(!fs.existsSync(f.name)){
+                execSync(`mkdir ${f.name}`)
+                execSync(`git clone ${f.ssh_url}`)
+            }else{
+                execSync('git pull',{cwd:`${f.name}`, stdio:"inherit"})
             }
+            let filesArray = execSync(`find ${f.name} -name package.json -not -path "*/node_modules/*"`).toString().split('\n')
+            filesArray = filesArray.filter((fA)=>!(fA===''));
+            if(filesArray.length===0){
+                console.log('package.json not Found')
+            }
+            await Promise.all(filesArray.map(element => {
+                console.log(`${element.slice(0,element.indexOf('package.json'))} - Updating Version in json file`)
+                execSync('ncu -u',{cwd: `./${element.slice(0,element.indexOf('package.json'))}`})
+                console.log("Installing packages and Updating lock-json file")
+                execSync('npm i',{cwd: `./${element.slice(0,element.indexOf('package.json'))}`})
+            }))
+            if(!execSync('git status',{ cwd: `./${f.name}`}).toString().includes('nothing to commit, working tree clean')){
+                execSync('git add -A',{ cwd: `./${f.name}`} )
+                execSync('git commit -m "Packages Updated "',{ cwd:`./${f.name}`})
+                execSync('git push',{cwd:`./${f.name}`})
+            }else{
+                console.log('No Files Updated')
+            }
+        } catch (error) {
+            throw new Error(error);
         }
-    }
-    catch(error){
-        console.log(error.output[2].toString(),'overall')
-        process.exit();
-    }
-})
+    }))
+   } catch (error) {
+       throw new Error(error);
+   }
+}
+
+gitRead()
