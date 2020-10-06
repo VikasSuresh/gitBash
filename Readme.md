@@ -14,7 +14,7 @@ npm start
  
 ## Description:
 
-1. App.js
+1. app.js
     1. Get's all the Public repos.
     2. Using the execSync function it performs the git operations.
     3. Check whether any package updates are available.
