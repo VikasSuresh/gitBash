@@ -11,11 +11,11 @@
   "author": "VikasSuresh",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.20.0",
     "dotenv": "^8.2.0",
-    "express": "^3.17.1",
+    "express": "^4.17.1",
     "find": "^0.3.0",
-    "isomorphic-git": "^1.0.0",
-    "npm-check-updates": "^4.0.1"
+    "isomorphic-git": "^1.7.8",
+    "npm-check-updates": "^9.0.4"
   }
 }
